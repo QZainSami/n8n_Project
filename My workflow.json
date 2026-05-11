@@ -1,0 +1,185 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "dbms-trigger",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "61885a3b-478a-405e-8b37-e9545cbe7846",
+      "name": "Webhook",
+      "webhookId": "56990fbd-8c01-4122-bd57-5e2bc778f98b"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "operation": "get",
+        "owner": {
+          "__rl": true,
+          "value": "QZainSami",
+          "mode": "list",
+          "cachedResultName": "QZainSami",
+          "cachedResultUrl": "https://github.com/QZainSami"
+        },
+        "repository": {
+          "__rl": true,
+          "mode": "name",
+          "value": "={{ $json.body.repository.name }}"
+        },
+        "filePath": "README.md",
+        "asBinaryProperty": false,
+        "additionalParameters": {}
+      },
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 1.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "a54cc0b8-1eb9-4d22-96a4-1488784389ca",
+      "name": "Get a file",
+      "webhookId": "148e553e-dcc4-4495-ac0d-ab56fb05ff3c",
+      "credentials": {
+        "githubApi": {
+          "id": "RcQiDJf2Lgj0EhAE",
+          "name": "GitHub account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=I am building an automated Developer Presence Engine. I just starred a repository named: {{ $('Webhook').item.json.body.repository.name }}\n\nHere is the project's README file:\n{{ $('Get a file').item.json.content }}\n\nFirst, decode this Base64 text internally so you can read my project documentation. Then, based on that README, act as a career coach and generate three things for me:\n1. CV: A single, professional, high-impact bullet point for my resume.\n2. LinkedIn: A 2-sentence professional post announcing this project.\n3. Discord: A short, casual announcement message for my tech friends.\n\nOutput the response as a valid JSON object with exactly three keys: \"cv\", \"linkedin\", and \"discord\". Do not include markdown formatting."
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "e3075cfa-d630-4824-aaca-5b3185ea0033",
+      "name": "Message a model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "6Z8VYnt1V1vJD5Xi",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "webhook",
+        "content": "={{ $json.discord }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        992,
+        0
+      ],
+      "id": "5a56a652-ab04-4b53-b955-9e2e91c955f0",
+      "name": "Discord",
+      "webhookId": "62c0e4eb-caf5-42e0-b1fc-284619759d61",
+      "credentials": {
+        "discordWebhookApi": {
+          "id": "6vdssMGSS8CeQAXG",
+          "name": "Discord Webhook account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// This grabs the data directly from the input connection\nconst rawText = $input.item.json.content.parts[0].text;\n\n// Safety check: if for some reason there's no text, return empty\nif (!rawText) return { error: \"No text found\" };\n\n// Strip out markdown backticks if Gemini added them\nconst cleanText = rawText.replace(/```json|```/g, \"\").trim();\n\n// Turn the string into real n8n fields\nreturn JSON.parse(cleanText);"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        768,
+        0
+      ],
+      "id": "793c66c5-ec2a-403d-a031-f3501ab967ac",
+      "name": "Code in JavaScript"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get a file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a file": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Discord",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "2daf39bf-4bf1-414d-8ad6-0a0b19b2a593",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "0555ac5c3442d343d83691244784c6fe996f339a0cef31db87814354e0249021"
+  },
+  "id": "AaBZyaKkT6Swv0Pf",
+  "tags": []
+}
